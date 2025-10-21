@@ -1,0 +1,85 @@
+-- ===================== LAB 2 - DDL (final version) =====================
+
+-- 1️⃣ flight кестесіне қақпа (gate) бағандарын қосу
+ALTER TABLE flight
+    ADD COLUMN IF NOT EXISTS departing_gate TEXT,
+    ADD COLUMN IF NOT EXISTS arriving_gate TEXT;
+
+-- 2️⃣ airline кестесіне қосымша сипаттама бағанын қосу
+ALTER TABLE airline
+    ADD COLUMN IF NOT EXISTS info VARCHAR(100);
+
+-- 3️⃣ flights кестесіндегі байланыстарды нақтылау
+ALTER TABLE flight DROP CONSTRAINT IF EXISTS fk_flight_airline;
+ALTER TABLE flight DROP CONSTRAINT IF EXISTS fk_flight_departure_airport;
+ALTER TABLE flight DROP CONSTRAINT IF EXISTS fk_flight_arrival_airport;
+
+ALTER TABLE flight
+    ADD CONSTRAINT fk_flight_airline
+        FOREIGN KEY (airline_id) REFERENCES airline(airline_id),
+    ADD CONSTRAINT fk_flight_departure_airport
+        FOREIGN KEY (departure_airport_id) REFERENCES airport(airport_id),
+    ADD CONSTRAINT fk_flight_arrival_airport
+        FOREIGN KEY (arrival_airport_id) REFERENCES airport(airport_id);
+
+-- 4️⃣ booking пен басқа кестелер арасындағы байланыстарды тексеріп жаңарту
+ALTER TABLE booking DROP CONSTRAINT IF EXISTS fk_booking_flight;
+ALTER TABLE booking DROP CONSTRAINT IF EXISTS fk_booking_passenger;
+
+ALTER TABLE booking
+    ADD CONSTRAINT fk_booking_flight FOREIGN KEY (flight_id) REFERENCES flight(flight_id),
+    ADD CONSTRAINT fk_booking_passenger FOREIGN KEY (passenger_id) REFERENCES passenger(passenger_id);
+
+ALTER TABLE boarding_pass DROP CONSTRAINT IF EXISTS fk_boarding_booking;
+ALTER TABLE boarding_pass
+    ADD CONSTRAINT fk_boarding_booking FOREIGN KEY (booking_id) REFERENCES booking(booking_id);
+
+ALTER TABLE baggage DROP CONSTRAINT IF EXISTS fk_baggage_booking;
+ALTER TABLE baggage
+    ADD CONSTRAINT fk_baggage_booking FOREIGN KEY (booking_id) REFERENCES booking(booking_id);
+
+ALTER TABLE baggage_checking DROP CONSTRAINT IF EXISTS fk_baggage_checking_booking;
+ALTER TABLE baggage_checking DROP CONSTRAINT IF EXISTS fk_baggage_checking_passenger;
+ALTER TABLE baggage_checking
+    ADD CONSTRAINT fk_baggage_checking_booking FOREIGN KEY (booking_id) REFERENCES booking(booking_id),
+    ADD CONSTRAINT fk_baggage_checking_passenger FOREIGN KEY (passenger_id) REFERENCES passenger(passenger_id);
+
+ALTER TABLE security_check DROP CONSTRAINT IF EXISTS fk_security_passenger;
+ALTER TABLE security_check
+    ADD CONSTRAINT fk_security_passenger FOREIGN KEY (passenger_id) REFERENCES passenger(passenger_id);
+
+
+
+
+
+
+-- ===================== LAB 2 - DML =====================
+
+-- 1️⃣ airline кестесіне жаңа авиакомпаниялар қосу
+INSERT INTO airline (airline_code, airline_name, country, created_at, updated_at)
+VALUES
+    ('KZ001', 'KazAir', 'Kazakhstan', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('FR001', 'AirEasy', 'France', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('BR001', 'FlyHigh', 'Brazil', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (airline_code) DO NOTHING;  -- қайталануды болдырмау
+
+-- 2️⃣ авиакомпания елін жаңарту
+UPDATE airline
+SET country = 'Türkiye'
+WHERE airline_code = 'KZ001';
+
+-- 3️⃣ бір авиакомпанияны жою
+DELETE FROM airline
+WHERE airline_code = 'BR001';
+
+-- 4️⃣ билет бағасын 15% өсіру
+UPDATE booking
+SET ticket_price = ticket_price * 1.15;
+
+-- 5️⃣ бағасы 10000-нан төмен билеттерді жою
+DELETE FROM booking
+WHERE ticket_price < 10000;
+
+-- 6️⃣ нәтижені көру
+SELECT * FROM airline;
+SELECT * FROM booking;
